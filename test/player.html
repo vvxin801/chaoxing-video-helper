@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>模拟播放器</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #05070b; overflow: hidden; }
+  .stage { position: absolute; inset: 0; }
+  video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .meta {
+    position: absolute; left: 12px; bottom: 10px; margin: 0;
+    font: 12px/1.5 system-ui, "Microsoft YaHei", sans-serif; color: rgba(230,237,243,.72);
+    background: rgba(0,0,0,.45); padding: 4px 10px; border-radius: 999px;
+  }
+  #innerNext {
+    position: absolute; right: 12px; bottom: 10px; display: none;
+    padding: 7px 14px; border: 0; border-radius: 8px; cursor: pointer;
+    background: rgba(255,255,255,.14); color: #fff; font: 12px/1.5 system-ui, sans-serif;
+  }
+  body.inner #innerNext { display: block; }
+</style>
+</head>
+<body>
+  <div class="stage"><video id="v" playsinline muted preload="auto"></video></div>
+  <p class="meta">模拟视频 · 第 <span id="lesson">1</span> 集 · <span id="status">准备中…</span></p>
+  <button id="innerNext" type="button" class="nextBtn">下一集</button>
+  <script src="clip.js"></script>
+  <script src="player.js"></script>
+</body>
+</html>

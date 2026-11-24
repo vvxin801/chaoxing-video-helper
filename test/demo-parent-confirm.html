@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>章节测验 · 外层确认框演示</title>
+<style>
+  body { margin: 0; padding: 24px 30px; background: #eef1f7; color: #1f2430;
+         font: 15px/1.7 "Microsoft YaHei", system-ui, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  .sub { color: #6b7280; margin: 0 0 16px; }
+  iframe { width: 100%; height: 430px; border: 0; background: #fff; border-radius: 10px;
+           box-shadow: 0 2px 10px rgba(15, 23, 42, .06); }
+  .foot { margin-top: 18px; display: flex; gap: 12px; }
+  .btn { padding: 10px 26px; border-radius: 20px; cursor: pointer; user-select: none; }
+  #prevBtn { border: 1px solid #cbd5e1; color: #64748b; }
+  #nextBtn { background: #5a6cf3; color: #fff; }
+  /* 模仿平台自绘的确认框 */
+  .layer-mask { position: fixed; inset: 0; background: rgba(15, 23, 42, .35); display: none; }
+  .layui-layer { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%);
+                 width: 360px; background: #fff; border-radius: 10px; overflow: hidden;
+                 box-shadow: 0 16px 48px rgba(15, 23, 42, .28); }
+  .layui-layer-title { padding: 14px 18px; font-weight: 600; border-bottom: 1px solid #eef0f4; }
+  .layui-layer-content { padding: 26px 18px; color: #334155; }
+  .layui-layer-btn { padding: 0 18px 16px; text-align: right; }
+  .layui-layer-btn a { display: inline-block; margin-left: 10px; padding: 8px 22px;
+                       border-radius: 18px; cursor: pointer; text-decoration: none; }
+  .layui-layer-btn .no { border: 1px solid #cbd5e1; color: #64748b; }
+  .layui-layer-btn .ok { background: #5a6cf3; color: #fff; }
+  .show { display: block; }
+</style>
+</head>
+<body>
+  <h1>章节测验 · 外层确认框演示</h1>
+  <p class="sub">题目在 iframe 里，“确认提交?”由外层页面弹出——扩展必须在外层也能点掉它。</p>
+
+  <iframe id="quizFrame" src="demo-textquiz.html?parentConfirm=1"></iframe>
+
+  <script>
+    // 外层页面自己不参与答题（没有题目文字、URL 也没有 vanqa 调试参数），
+    // 只负责弹确认框和“下一节”。题目参数转给里面的 iframe。
+    (function () {
+      var q = new URLSearchParams(location.search);
+      var mock = q.get('vanqaAi') || '';
+      document.getElementById('quizFrame').src =
+        'demo-textquiz.html?parentConfirm=1&vanqa=1&vanqaAi=' + encodeURIComponent(mock);
+    })();
+  </script>
+
+  <div class="foot">
+    <div id="prevBtn" class="btn">上一节</div>
+    <div id="nextBtn" class="btn next">下一节</div>
+  </div>
+
+  <div id="mask" class="layer-mask"></div>
+  <div id="confirmLayer" class="layui-layer" style="display:none">
+    <div class="layui-layer-title">提示</div>
+    <div class="layui-layer-content">确认提交?</div>
+    <div class="layui-layer-btn">
+      <a href="javascript:;" class="no" id="confirmNo">取消</a>
+      <a href="javascript:;" class="ok" id="confirmYes">提交</a>
+    </div>
+  </div>
+
+<script>
+  window.__submitted = 0;
+  window.__nextClicked = 0;
+  window.__layerShown = 0;
+
+  function showLayer() {
+    window.__layerShown++;
+    document.getElementById('mask').classList.add('show');
+    document.getElementById('confirmLayer').style.display = 'block';
+  }
+  function hideLayer() {
+    document.getElementById('mask').classList.remove('show');
+    document.getElementById('confirmLayer').style.display = 'none';
+  }
+
+  window.addEventListener('message', function (ev) {
+    var d = ev.data || {};
+    if (d.type === 'van-demo-submit') showLayer();
+  });
+
+  document.getElementById('confirmNo').addEventListener('click', function () { hideLayer(); });
+  document.getElementById('confirmYes').addEventListener('click', function () {
+    window.__submitted++;
+    hideLayer();
+    try {
+      document.getElementById('quizFrame').contentWindow.postMessage({ type: 'van-demo-confirmed' }, '*');
+    } catch (e) { /* ignore */ }
+  });
+  document.getElementById('nextBtn').addEventListener('click', function () { window.__nextClicked++; });
+</script>
+</body>
+</html>

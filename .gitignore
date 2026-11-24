@@ -1,0 +1,7 @@
+# 测试产物（截图/临时 profile），可随时用 e2e 重新生成
+test/artifacts/
+.vAN-profile/
+*.zip
+node_modules/
+.DS_Store
+Thumbs.db

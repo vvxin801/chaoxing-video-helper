@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>单选题演示（字母画在圆圈里）</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; background: #f7f8fa; font: 15px/1.7 "Microsoft YaHei", system-ui, sans-serif; color: #1f2937; }
+  .wrap { max-width: 900px; margin: 28px auto 120px; }
+  .head { background: #fff; border-radius: 12px; padding: 18px 22px; box-shadow: 0 1px 4px rgba(15,23,42,.08); }
+  .head h1 { margin: 0 0 6px; font-size: 18px; }
+  .head p { margin: 0; color: #7b8794; font-size: 13px; }
+  .q { background: #fff; border: 1px solid #6ec7a8; border-radius: 4px; padding: 18px 20px; margin-top: 16px; }
+  .stem { font-size: 16px; margin-bottom: 14px; }
+  .opts { display: block; }
+  .opt { display: flex; align-items: center; gap: 12px; padding: 12px 10px; border-radius: 6px; cursor: pointer; }
+  .opt:hover { background: #f2fbf7; }
+  .opt .dot { width: 20px; height: 20px; border: 1px solid #c3ccd6; border-radius: 50%; position: relative; flex: 0 0 20px; }
+  /* 字母是伪元素画的：DOM 文本里没有 A/B/C/D */
+  .opt .dot::after { content: attr(data-k); font-size: 12px; color: #6b7785; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .opt.is-checked .dot { border-color: #12b886; background: #12b886; }
+  .opt.is-checked .dot::after { color: #fff; }
+  .opt.is-checked .txt { color: #0f9d76; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid #e5e9ef; padding: 12px 22px; display: flex; justify-content: flex-end; gap: 12px; }
+  .submit { display: inline-block; background: #0f9d76; color: #fff; border-radius: 18px; padding: 8px 30px; cursor: pointer; }
+  .tips { color: #8b97a5; font-size: 12px; margin-right: auto; align-self: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>单选题 · 演示页</h1>
+    <p>选项字母用 CSS 伪元素画在圆圈里，DOM 的文本里只有选项内容、没有 A/B，用来验证“按排列顺序认选项”的兜底逻辑。</p>
+  </div>
+
+  <div class="q">
+    <div class="stem">1【单选题】关于蒸馏水，下列说法中错误的是（ ）。</div>
+    <div class="opts">
+      <div class="opt" data-k="A"><span class="dot" data-k="A"></span><span class="txt">实验室最常用的一种纯水</span></div>
+      <div class="opt" data-k="B"><span class="dot" data-k="B"></span><span class="txt">蒸馏水能去除自来水内大部分污染物</span></div>
+      <div class="opt" data-k="C"><span class="dot" data-k="C"></span><span class="txt">蒸馏水能去除自来水内挥发性的杂质</span></div>
+      <div class="opt" data-k="D"><span class="dot" data-k="D"></span><span class="txt">新鲜的蒸馏水是无菌的</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="bar">
+  <span class="tips" id="tips">点“提交”即计数（选项没有 input，选中靠 .is-checked 类名）。</span>
+  <a href="javascript:;" class="submit" id="submitBtn">提交</a>
+</div>
+
+<script>
+  (function () {
+    window.__picked = [];
+    window.__submitted = 0;
+
+    document.querySelectorAll('.opt').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var on = el.classList.toggle('is-checked');
+        var key = el.getAttribute('data-k');
+        if (on) { if (window.__picked.indexOf(key) === -1) window.__picked.push(key); }
+        else { window.__picked = window.__picked.filter(function (k) { return k !== key; }); }
+      });
+    });
+
+    document.getElementById('submitBtn').addEventListener('click', function () {
+      window.__submitted += 1;
+      document.getElementById('tips').textContent = '已提交（第 ' + window.__submitted + ' 次）';
+    });
+
+    window.__quiz = {
+      count: function () { return 1; },
+      filled: function () { return document.querySelectorAll('.opt.is-checked').length ? 1 : 0; },
+      values: function () { return [{ picked: window.__picked.slice() }]; },
+      submitted: function () { return window.__submitted; }
+    };
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>切到下一节后自动播放 · 演示页</title>
+<style>
+  body { margin: 0; font: 15px/1.7 -apple-system, "Segoe UI", sans-serif; background: #eef2f7; color: #1f2937; }
+  .page { max-width: 860px; margin: 0 auto; padding: 28px 20px; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  p.sub { margin: 0 0 18px; color: #64748b; font-size: 13px; }
+  .player { background: #0b1020; border-radius: 12px; overflow: hidden; aspect-ratio: 16 / 9; }
+  iframe { width: 100%; height: 100%; border: 0; }
+  .bar { margin-top: 14px; display: flex; align-items: center; gap: 12px; }
+  button { height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>切到下一节后自动播放</h1>
+  <p class="sub">播放器用 <code>autoplay=0</code> 模拟“停在播放按钮、等人点”的学习通视频页。扩展若在切换小节后自动按播放，下面的视频会自己动起来。</p>
+  <div class="player"><iframe id="frame" title="播放器" allow="autoplay"
+    src="player.html?lesson=1&autoplay=0&dur=12"></iframe></div>
+  <div class="bar">
+    <button id="nextBtn" type="button">下一节 →</button>
+    <span id="state">等待播放</span>
+  </div>
+</div>
+<script>
+  (function () {
+    var frame = document.getElementById('frame');
+    var state = document.getElementById('state');
+    var next = document.getElementById('nextBtn');
+    window.__nextClicked = 0;
+    window.__playing = false;
+
+    function doc() {
+      try { return frame.contentDocument; } catch (e) { return null; }
+    }
+
+    setInterval(function () {
+      var d = doc();
+      var v = d && d.querySelector('video');
+      window.__playing = !!(v && !v.paused && !v.ended);
+      state.textContent = window.__playing ? '正在播放' : '等待播放';
+    }, 300);
+
+    next.addEventListener('click', function () {
+      window.__nextClicked++;
+    });
+  })();
+</script>
+</body>
+</html>

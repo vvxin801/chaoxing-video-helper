@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自动连播 · 本地演示（一个小节里有多个视频）</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #21262d; --text: #e6edf3;
+    --muted: #8b949e; --accent: #34d399; --accent2: #22d3ee;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font: 14px/1.6 system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 22px;
+    border-bottom: 1px solid var(--line); background: #0f1520;
+  }
+  header h1 { margin: 0; font-size: 15px; font-weight: 700; }
+  header .tag {
+    font-size: 11px; color: var(--accent); border: 1px solid rgba(52,211,153,.35);
+    background: rgba(52,211,153,.10); padding: 2px 8px; border-radius: 999px;
+  }
+  .layout { display: grid; grid-template-columns: 240px 1fr; gap: 18px; padding: 18px 22px 40px; max-width: 1180px; }
+  aside { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; height: fit-content; }
+  aside h2 { margin: 4px 6px 10px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .6px; }
+  .sec {
+    padding: 9px 10px; margin-bottom: 4px; border-radius: 8px; border: 1px solid transparent;
+    font-size: 12.5px; color: var(--text);
+  }
+  .sec.cur { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.35); color: #d1fae5; }
+  .sec .tasks { display: block; margin-top: 3px; font-size: 11px; color: var(--muted); }
+  .sec.cur .tasks { color: rgba(209,250,229,.72); }
+  main { min-width: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden;
+  }
+  .card .box { position: relative; aspect-ratio: 16 / 9; background: #000; }
+  .card video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .card .cap { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12.5px; }
+  .card .cap .no {
+    flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 10.5px; background: #21262d; color: var(--muted);
+  }
+  .card .cap .st { margin-left: auto; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .card.on { border-color: rgba(52,211,153,.4); }
+  .card.on .cap .st { color: var(--accent); }
+  .controls { display: flex; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .controls button {
+    padding: 9px 16px; border-radius: 9px; border: 1px solid var(--line); background: #1c2330;
+    color: var(--text); font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .controls button:hover { background: #232c3a; }
+  .controls .next-btn {
+    border-color: transparent; font-weight: 700;
+    background: linear-gradient(135deg, #10b981, #06b6d4); color: #04121a;
+  }
+  .controls .next-btn:hover { filter: brightness(1.08); }
+  .state { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+  .state b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .notes {
+    margin-top: 16px; padding: 12px 16px; border: 1px dashed var(--line);
+    border-radius: 10px; color: var(--muted); font-size: 12px;
+  }
+  .notes b { color: var(--text); }
+  .notes code { background: #1c2330; padding: 1px 6px; border-radius: 5px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>自动连播 · 本地演示</h1>
+  <span class="tag">同一小节 3 个视频</span>
+</header>
+
+<div class="layout">
+  <aside>
+    <h2>课程目录</h2>
+    <div class="sec cur"><b>第 1 小节</b><span class="tasks">3 个任务点（视频）</span></div>
+    <div class="sec" id="sec2">第 2 小节<span class="tasks">下一节，等第 1 小节播完才该跳过去</span></div>
+  </aside>
+
+  <main>
+    <div class="grid" id="grid"></div>
+
+    <div class="controls">
+      <button id="nextBtn" type="button" class="next-btn">下一节 →</button>
+      <div class="state">状态：<b id="state">第 1 小节</b> · 下一节被点了 <b id="clicks">0</b> 次</div>
+    </div>
+
+    <div class="notes">
+      <b>这个页面在验证什么：</b>一个小节里有 3 个视频，播完第 1 个应该自动接着播第 2 个、第 3 个，<b>而不是</b>直接跳到下一小节。<br>
+      <b>怎么看：</b>三个视频一共约 12 秒；前两个播完都只在本节内切换，等第 3 个也播完，页面顶部才出现倒计时条并自动点“下一节”。
+      点完“下一节”这一节会换成一整组新视频（不自动播），扩展应该自己把新小节的第 1 个放起来。<br>
+      <b>试试从中间开始：</b>地址改成 <code>demo-multi.html?start=2&amp;vanDelay=1</code>，就只从第 2 个开始播，
+      第 1 个<b>不会</b>被翻回去补播，播完第 2、3 个才跳下一节。
+    </div>
+  </main>
+</div>
+
+<script src="clip.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const DURATION = 4;
+  const params = new URLSearchParams(location.search);
+  const START = Math.max(1, Math.min(3, Number(params.get('start')) || 1));
+
+  const grid = document.getElementById('grid');
+  const nextBtn = document.getElementById('nextBtn');
+  const stateEl = document.getElementById('state');
+  const clicksEl = document.getElementById('clicks');
+  const sec2 = document.getElementById('sec2');
+
+  let lesson = Number(params.get('lesson')) || 1;
+  let clicks = 0;
+  let cards = [];
+  let statuses = [];
+  let videos = [];
+  let played = [];          // 这一节里真的播过的序号
+
+  function makeCard(i, label) {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML =
+      '<div class="box"><video playsinline muted preload="auto"></video></div>' +
+      '<div class="cap"><span class="no">' + (i + 1) + '</span>' +
+      '<span>' + label + '</span><span class="st">待播放</span></div>';
+    const video = el.querySelector('video');
+    const st = el.querySelector('.st');
+    video.addEventListener('play', () => {
+      if (played.indexOf(i + 1) < 0) played.push(i + 1);
+      cards.forEach((c) => c.classList.remove('on'));
+      el.classList.add('on');
+      st.textContent = '播放中';
+    });
+    video.addEventListener('ended', () => { st.textContent = '已结束'; });
+    return { el, video, st };
+  }
+
+  /** 换一整节的视频列表；新视频不会自动播，交给扩展去放。 */
+  async function render(list) {
+    for (const v of videos) {
+      try { v.pause(); } catch (e) { /* ignore */ }
+    }
+    grid.textContent = '';
+    cards = []; statuses = []; videos = []; played = [];
+    list.forEach((item, i) => {
+      const it = makeCard(i, item.label);
+      grid.appendChild(it.el);
+      cards.push(it.el);
+      statuses.push(it.st);
+      videos.push(it.video);
+    });
+    if (!window.__clip || !window.__clip.supported) {
+      stateEl.textContent = '当前浏览器不支持现场生成视频';
+      return;
+    }
+    const blob = await window.__clip.makeClip(DURATION, '任务点');
+    const src = URL.createObjectURL(blob);
+    for (const v of videos) { v.src = src; v.muted = true; }
+  }
+
+  function syncUrl() {
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set('lesson', String(lesson));
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    } catch (e) { /* ignore */ }
+  }
+
+  function markLesson2() {
+    if (lesson === 2) return;
+    lesson = 2;
+    clicks += 1;
+    clicksEl.textContent = String(clicks);
+    stateEl.textContent = '第 2 小节';
+    sec2.classList.add('cur');
+    sec2.innerHTML = '<b>第 2 小节</b><span class="tasks">已切到这一节，新的 2 个视频不会自己播</span>';
+    syncUrl();
+    render([
+      { label: '任务点 1 · 视频' },
+      { label: '任务点 2 · 视频' }
+    ]);
+  }
+
+  nextBtn.addEventListener('click', markLesson2);
+
+  window.__demo = {
+    lesson: () => lesson,
+    nextClicks: () => clicks,
+    count: () => cards.length,
+    statuses: () => statuses.map((el) => el.textContent),
+    startIndex: () => START,
+    played: () => played.slice(),
+    playing: () => videos.map((v, i) => (!v.paused && !v.ended ? i + 1 : 0)).filter(Boolean)
+  };
+
+  (async () => {
+    await render([
+      { label: '任务点 1 · 视频' },
+      { label: '任务点 2 · 视频' },
+      { label: '任务点 3 · 视频' }
+    ]);
+    // 只从“当前这一位”开始播，前面的不碰；后面交给扩展自己接力
+    try { await videos[START - 1].play(); } catch (e) { /* ignore */ }
+  })();
+})();
+</script>
+</body>
+</html>

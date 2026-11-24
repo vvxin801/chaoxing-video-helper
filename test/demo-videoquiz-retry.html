@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>课程视频学习 - 弹题答错重试演示</title>
+<style>
+  :root{color-scheme:light}
+  *{box-sizing:border-box}
+  body{margin:0;background:#eef1f6;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;color:#1f2937}
+  header{height:52px;background:#3f5b8a;color:#fff;display:flex;align-items:center;padding:0 20px;font-size:15px}
+  .page{max-width:980px;margin:24px auto;padding:0 16px}
+  h1{font-size:22px;margin:0 0 8px}
+  .hint{color:#6b7280;font-size:13px;margin-bottom:16px}
+  .player{position:relative;background:#101418;border-radius:10px;height:460px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .player .label{color:#4b5563;font-size:13px;position:absolute;left:16px;top:14px}
+  .teacher{width:260px;height:100%;background:linear-gradient(180deg,#1c2530,#0d1117);display:flex;align-items:center;justify-content:center;color:#374151;font-size:12px}
+
+  .ans-videoquiz-box{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:560px;max-width:92%;
+    background:rgba(12,16,22,.94);border:1px solid #2b3a4f;border-radius:12px;padding:20px 22px 16px;color:#e5edf7;
+    box-shadow:0 18px 50px rgba(0,0,0,.5);z-index:5}
+  .ans-videoquiz-title{display:inline-block;padding:2px 9px;border-radius:999px;background:#25406b;color:#9fc4ff;font-size:12px;margin-bottom:12px}
+  .ans-videoquiz-question{font-size:16px;line-height:1.6;margin-bottom:14px}
+  .ans-videoquiz-opt{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .ans-videoquiz-opt li{display:flex;align-items:center;gap:10px;padding:9px 14px;border:1px solid #2d3b50;border-radius:9px;
+    cursor:pointer;font-size:14px;transition:border-color .15s,background .15s}
+  .ans-videoquiz-opt li:hover{border-color:#3f5b8a;background:rgba(63,91,138,.18)}
+  .ans-videoquiz-opt li::before{content:"";width:13px;height:13px;border-radius:50%;border:1.5px solid #5b708f;flex:0 0 auto}
+  .ans-videoquiz-opt li.ans-videoquiz-opt-active{border-color:#409eff;background:rgba(64,158,255,.14)}
+  .ans-videoquiz-opt li.ans-videoquiz-opt-active::before{border-color:#409eff;background:#409eff;box-shadow:inset 0 0 0 3px #0c1016}
+  .ans-videoquiz-submit{display:inline-block;margin-top:16px;margin-left:auto;background:#409eff;color:#fff;border-radius:8px;
+    padding:8px 22px;font-size:14px;cursor:pointer;user-select:none}
+  .ans-videoquiz-submit:hover{filter:brightness(1.06)}
+  .ans-videoquiz-box.done{display:none}
+  .ans-videoquiz-error{margin-top:12px;color:#f87171;font-size:13px;display:none}
+  .toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(52,211,153,.16);
+    border:1px solid rgba(52,211,153,.5);color:#a7f3d0;padding:7px 14px;border-radius:8px;font-size:13px;display:none}
+</style>
+</head>
+<body>
+<header>课程视频学习</header>
+<div class="page">
+  <h1>1.4 高校实验室安全事故类型</h1>
+  <div class="hint">演示页：第一次提交正确答案会判“回答错误”，插件应换一个选项再交，直到答对。</div>
+  <div class="player">
+    <span class="label">视频</span>
+    <div class="teacher">（视频画面）</div>
+    <div class="toast" id="toast">答对了，继续播放</div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var box = null;
+    var submitted = 0;   // 答对次数
+    var attempts = 0;    // 提交次数（含答错）
+    var picked = '';
+
+    window.__quiz = {
+      shown: function () { return !!box && !box.classList.contains('done'); },
+      filled: function () { return !!picked; },
+      selected: function () { return picked; },
+      submitted: function () { return submitted; },
+      attempts: function () { return attempts; }
+    };
+
+    function build() {
+      box = document.createElement('div');
+      box.className = 'ans-videoquiz-box';
+      box.innerHTML =
+        '<div class="ans-videoquiz-title">判断题</div>' +
+        '<div class="ans-videoquiz-question">水能变成油。</div>' +
+        '<ul class="ans-videoquiz-opt">' +
+          '<li>A、对</li>' +
+          '<li>B、错</li>' +
+        '</ul>' +
+        '<div class="ans-videoquiz-error">回答错误，请重新作答</div>' +
+        '<div class="ans-videoquiz-submit">提交</div>';
+
+      var opts = box.querySelectorAll('.ans-videoquiz-opt li');
+      for (var i = 0; i < opts.length; i++) {
+        opts[i].addEventListener('click', function () {
+          for (var j = 0; j < opts.length; j++) opts[j].classList.remove('ans-videoquiz-opt-active');
+          this.classList.add('ans-videoquiz-opt-active');
+          picked = this.textContent.trim();
+        });
+      }
+
+      box.querySelector('.ans-videoquiz-submit').addEventListener('click', function () {
+        if (!picked) return;
+        attempts++;
+        window.__quiz.lastSubmitted = picked;
+        var err = box.querySelector('.ans-videoquiz-error');
+        // 正确答案是“错”；选“对”判错，弹题留在页面上，等插件换答案
+        if (picked.indexOf('错') < 0) {
+          err.style.display = 'block';
+          return;
+        }
+        submitted++;
+        err.style.display = 'none';
+        box.classList.add('done');
+        var toast = document.getElementById('toast');
+        toast.style.display = 'block';
+        setTimeout(function () { toast.style.display = 'none'; }, 2200);
+      });
+
+      document.querySelector('.player').appendChild(box);
+    }
+
+    setTimeout(build, 400);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>视频播放助手</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="head">
+    <img src="../icons/icon48.png" alt="" width="30" height="30">
+    <div class="titles">
+      <h1>视频播放助手</h1>
+      <p id="ver">自动连播</p>
+    </div>
+    <span class="badge" id="badge">就绪</span>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="kv"><span>当前页面</span><b id="status">检测中…</b></div>
+      <div class="kv"><span>倍速 / 进度</span><b id="media">—</b></div>
+    </section>
+
+    <section class="card">
+      <label class="row sw">
+        <span>自动连播<small>视频结束后自动切到下一集</small></span>
+        <input type="checkbox" id="autoNext">
+      </label>
+      <div class="row col">
+        <div class="row-head"><span>切换倒计时</span><b id="delayVal">5s</b></div>
+        <input type="range" id="delaySec" min="0" max="15" step="1">
+      </div>
+    </section>
+
+    <section class="card">
+      <label class="row sw"><span>倍速记忆<small>按站点记住播放速度</small></span><input type="checkbox" id="rememberSpeed"></label>
+      <label class="row sw"><span>进度续播<small>重新打开时回到上次位置</small></span><input type="checkbox" id="resumePosition"></label>
+      <label class="row sw"><span>画面识别<small>不触发结束事件时的兜底</small></span><input type="checkbox" id="visualDetect"></label>
+    </section>
+
+    <section class="card qa">
+      <label class="row sw"><span>自动答题<small>章节测验 / 作业，考试只填不交</small></span><input type="checkbox" id="qaEnabled"></label>
+      <label class="row sw"><span>打开答题页自动开始<small>看到题目就直接填</small></span><input type="checkbox" id="qaAutoRun"></label>
+      <label class="row sw"><span>填完自动提交<small>考试页永远不会自动交卷</small></span><input type="checkbox" id="qaAutoSubmit"></label>
+      <label class="row sw"><span>交完自动下一节<small>章节测验交完自动点“下一节”</small></span><input type="checkbox" id="qaAutoNext"></label>
+      <div class="kv"><span>本页题目</span><b id="qaPage">—</b></div>
+      <div class="kv"><span>题库 / 缓存</span><b id="qaStat">—</b></div>
+      <button id="qaStart" class="ghost wide">在当前答题页开始答题</button>
+      <details>
+        <summary>答题设置</summary>
+
+        <label class="field">
+          <span>答案来源</span>
+          <select id="qaProvider">
+            <option value="ai">AI（OpenAI 兼容接口）</option>
+            <option value="api">题库接口</option>
+            <option value="bank">只查本地题库</option>
+          </select>
+        </label>
+
+        <div id="qaAi">
+          <label class="field"><span>接口地址</span><input id="aiBaseUrl" spellcheck="false" placeholder="https://api.deepseek.com"></label>
+          <label class="field"><span>API Key</span><input id="aiApiKey" type="password" spellcheck="false" placeholder="sk-…"></label>
+          <label class="field"><span>模型</span><input id="aiModel" spellcheck="false" placeholder="deepseek-chat"></label>
+        </div>
+
+        <div id="qaApi" hidden>
+          <label class="field"><span>接口 URL（可用 {{q}} 占位）</span><input id="apiUrl" spellcheck="false" placeholder="https://example.com/api/search"></label>
+          <label class="field"><span>请求方式</span>
+            <select id="apiMethod"><option value="POST">POST</option><option value="GET">GET</option></select>
+          </label>
+          <label class="field"><span>Token（可选）</span><input id="apiToken" type="password" spellcheck="false"></label>
+          <label class="field"><span>请求体（POST）</span><textarea id="apiBody" rows="2" spellcheck="false" placeholder='{"question":"{{q}}","options":"{{o}}"}'></textarea></label>
+          <label class="field"><span>答案字段路径（可选）</span><input id="apiAnswerPath" spellcheck="false" placeholder="data.answer"></label>
+          <label class="field"><span>额外请求头（每行 key: value）</span><textarea id="apiHeaders" rows="2" spellcheck="false" placeholder="X-Api-Key: xxx"></textarea></label>
+        </div>
+
+        <label class="row sw"><span>先查本地题库<small>命中就不花钱</small></span><input type="checkbox" id="bankFirst"></label>
+
+        <div class="btns">
+          <button id="qaTest" class="ghost">测试连接</button>
+          <button id="qaCacheClear" class="ghost">清空缓存</button>
+        </div>
+
+        <p class="hint">本地题库支持 JSON、CSV、Tab 分隔，或每行“题目----答案”。</p>
+        <div class="btns">
+          <label class="file">导入题库<input type="file" id="qaBankFile" accept=".json,.csv,.txt,.tsv" hidden></label>
+          <button id="qaBankClear" class="ghost">清空题库</button>
+        </div>
+      </details>
+    </section>
+
+    <section class="card">
+      <label class="row sw"><span>助手总开关</span><input type="checkbox" id="enabled"></label>
+      <details>
+        <summary>高级设置</summary>
+        <label class="row sw"><span>显示悬浮面板</span><input type="checkbox" id="showHud"></label>
+        <label class="row sw"><span>启用键盘快捷键</span><input type="checkbox" id="shortcuts"></label>
+        <p class="hint">站点改版导致自动切换失效时，把“下一集”按钮的 CSS 选择器填在这里（每行一个）。</p>
+        <textarea id="extraSelectors" rows="2" spellcheck="false" placeholder="#nextBtn&#10;.player .next"></textarea>
+        <div class="keys">
+          <div><kbd>N</kbd> 下一集</div>
+          <div><kbd>[</kbd> <kbd>]</kbd> 减速 / 加速</div>
+          <div><kbd>J</kbd> <kbd>L</kbd> 快退 / 快进 10s</div>
+          <div><kbd>K</kbd> 播放 / 暂停</div>
+          <div><kbd>M</kbd> 静音</div>
+          <div><kbd>F</kbd> 全屏</div>
+        </div>
+      </details>
+    </section>
+
+    <button id="testNext" class="primary">在当前页面测试“下一集”</button>
+    <p class="foot">自动连播只省掉点“下一集”；自动答题默认关闭，考试页只填不交卷。请遵守所在学校的学术规范。</p>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="../shared/constants.js"></script>
+  <script src="../shared/qa.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

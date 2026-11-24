@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自动连播 · 本地演示（模拟学习通页面布局）</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #21262d; --text: #e6edf3;
+    --muted: #8b949e; --accent: #34d399; --accent2: #22d3ee;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font: 14px/1.6 system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 22px;
+    border-bottom: 1px solid var(--line); background: #0f1520;
+  }
+  header h1 { margin: 0; font-size: 15px; font-weight: 700; }
+  header .tag {
+    font-size: 11px; color: var(--accent); border: 1px solid rgba(52,211,153,.35);
+    background: rgba(52,211,153,.10); padding: 2px 8px; border-radius: 999px;
+  }
+  .layout { display: grid; grid-template-columns: 240px 1fr; gap: 18px; padding: 18px 22px 40px; max-width: 1180px; }
+  aside { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; height: fit-content; }
+  aside h2 { margin: 4px 6px 10px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .6px; }
+  .item {
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; cursor: pointer;
+    padding: 9px 10px; margin-bottom: 4px; border-radius: 8px; border: 1px solid transparent;
+    background: transparent; color: var(--text); font: inherit; font-size: 12.5px;
+  }
+  .item:hover { background: #1c2330; }
+  .item.cur { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.35); color: #d1fae5; }
+  .item .idx {
+    flex: none; width: 19px; height: 19px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 10.5px; background: #21262d; color: var(--muted);
+  }
+  .item.cur .idx { background: var(--accent); color: #04121a; font-weight: 700; }
+  main { min-width: 0; }
+  .player {
+    position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 12px;
+    border: 1px solid var(--line); overflow: hidden;
+  }
+  .player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .controls { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .controls button {
+    padding: 9px 16px; border-radius: 9px; border: 1px solid var(--line); background: #1c2330;
+    color: var(--text); font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .controls button:hover { background: #232c3a; }
+  .controls .next-btn {
+    border-color: transparent; font-weight: 700;
+    background: linear-gradient(135deg, #10b981, #06b6d4); color: #04121a;
+  }
+  .controls .next-btn:hover { filter: brightness(1.08); }
+  .state { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+  .state b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .notes {
+    margin-top: 16px; padding: 12px 16px; border: 1px dashed var(--line);
+    border-radius: 10px; color: var(--muted); font-size: 12px;
+  }
+  .notes b { color: var(--text); }
+  .notes code { background: #1c2330; padding: 1px 6px; border-radius: 5px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>自动连播 · 本地演示</h1>
+  <span class="tag">模拟学习通页面布局</span>
+</header>
+
+<div class="layout">
+  <aside>
+    <h2>课程目录</h2>
+    <div id="list"></div>
+  </aside>
+
+  <main>
+    <div class="player"><iframe id="frame" title="播放器" allow="autoplay"></iframe></div>
+
+    <div class="controls">
+      <button id="prevBtn" type="button">上一集</button>
+      <button id="nextBtn" type="button" class="next-btn">下一集 →</button>
+      <button id="replayBtn" type="button">重播本集</button>
+      <div class="state">状态：<b id="state">第 1 集</b></div>
+    </div>
+
+    <div class="notes">
+      <b>这个页面在验证什么：</b>视频放在 iframe 里（跨 frame），而“下一集”按钮在外层页面——和学习通的真实结构一致。<br>
+      <b>怎么看：</b>视频播完（约 5 秒）后，页面顶部会出现倒计时条，倒计时结束自动切到下一集；按 <code>Esc</code> 可取消。
+      把地址改成 <code>demo.html?vanDelay=1</code> 可把倒计时缩到 1 秒。
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const TOTAL = 4;
+  const frame = document.getElementById('frame');
+  const listEl = document.getElementById('list');
+  const stateEl = document.getElementById('state');
+  const nextBtn = document.getElementById('nextBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const replayBtn = document.getElementById('replayBtn');
+
+  let cur = 1;
+
+  function frameUrl() {
+    return 'player.html?lesson=' + cur;
+  }
+
+  function syncUrl() {
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set('lesson', String(cur));
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    } catch (e) { /* ignore */ }
+  }
+
+  function render() {
+    listEl.textContent = '';
+    for (let i = 1; i <= TOTAL; i++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'item' + (i === cur ? ' cur' : '');
+      b.innerHTML = '<span class="idx">' + i + '</span><span>第 ' + i + ' 集 · 模拟课程</span>';
+      b.addEventListener('click', () => go(i));
+      listEl.appendChild(b);
+    }
+  }
+
+  function go(n, why) {
+    const target = Math.max(1, Math.min(TOTAL, n));
+    if (target === cur && frame.getAttribute('src') === frameUrl()) return;
+    cur = target;
+    frame.src = frameUrl();
+    syncUrl();
+    render();
+    stateEl.textContent = '第 ' + cur + ' 集' + (why ? ' · ' + why : '');
+  }
+
+  nextBtn.addEventListener('click', () => {
+    if (cur >= TOTAL) { stateEl.textContent = '已经是最后一集'; return; }
+    go(cur + 1, '手动切换');
+  });
+
+  prevBtn.addEventListener('click', () => go(cur - 1, '手动切换'));
+
+  replayBtn.addEventListener('click', () => go(cur, '重播'));
+
+  window.addEventListener('message', (e) => {
+    const d = e.data;
+    if (!d || d.ch !== 'demo') return;
+    if (d.t === 'next') {
+      if (cur >= TOTAL) { stateEl.textContent = '已经是最后一集'; return; }
+      go(cur + 1, '播放器请求');
+    }
+  });
+
+  window.__demo = { lesson: () => cur, total: TOTAL };
+
+  frame.src = frameUrl();
+  render();
+})();
+</script>
+</body>
+</html>

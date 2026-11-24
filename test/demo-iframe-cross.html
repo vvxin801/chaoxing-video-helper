@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>跨域 iframe 里的章节测验</title>
+<style>
+  body { margin: 0; padding: 20px 24px; background: #eef2f7; color: #1f2430;
+         font: 15px/1.6 "Microsoft YaHei", system-ui, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p { color: #64748b; margin: 0 0 14px; }
+  iframe { width: 100%; height: 640px; border: 0; border-radius: 10px; background: #fff; }
+</style>
+</head>
+<body>
+  <h1>爆炸的预防（中）</h1>
+  <p>演示：测验在<b>跨域</b> iframe 里（127.0.0.1 → localhost），外层页面读不到它的 DOM，只能靠子页面自己的内容脚本作答。</p>
+  <iframe id="quizFrame" title="章节测验"></iframe>
+
+<script>
+  // 同一台机器、不同 host，构成跨域；这样才像学习通真正的 iframe 结构
+  window.__childSubmitted = 0;
+  window.addEventListener('message', function (e) {
+    if (e.data === 'van-demo-submitted') window.__childSubmitted++;
+  });
+  (function () {
+    var q = location.search || '?vanqa=1';
+    var src = location.origin.replace('127.0.0.1', 'localhost') + '/demo-textquiz.html' + q;
+    document.getElementById('quizFrame').src = src;
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>章节测验 · 文字流演示</title>
+<style>
+  body { margin: 0; padding: 28px 32px; background: #f5f7fa; color: #1f2430;
+         font: 15px/1.7 "Microsoft YaHei", system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .sub { color: #6b7280; margin: 0 0 22px; }
+  .stem { font-weight: 600; margin: 22px 0 10px; }
+  .opt { padding: 10px 14px; margin: 0 0 8px 24px; border: 1px solid #e5e7eb;
+         border-radius: 8px; background: #fff; cursor: pointer; user-select: none; }
+  .opt:hover { border-color: #99b4ff; }
+  .opt.is-checked { border-color: #2f6bff; background: #eef3ff; color: #2f6bff; }
+  #submitBtn { display: inline-block; margin-top: 24px; padding: 10px 34px;
+               border-radius: 20px; background: #5a6cf3; color: #fff; cursor: pointer; }
+  #nextBtn { display: inline-block; margin-left: 12px; padding: 10px 26px;
+             border-radius: 20px; border: 1px solid #cbd5e1; color: #334155; cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>爆炸的预防（上）</h1>
+  <p class="sub">文字流演示：题干和选项是平级 div，没有公共容器、没有 input。</p>
+
+  <div id="app">
+    <div class="stem">1【单选题】下列可燃性气体对应的爆炸极限错误的是（）。</div>
+    <div class="opt" data-k="A">A 氢气4.0%-74.2%</div>
+    <div class="opt" data-k="B">B 一氧化碳12.5%-74.2%</div>
+    <div class="opt" data-k="C">C 甲烷5.0%-15.0%</div>
+    <div class="opt" data-k="D">D 汽油蒸气60%-65%</div>
+
+    <div class="stem">2【判断题】可燃物质在空气中浓度低于爆炸下限时，不会发生爆炸。</div>
+    <div class="opt" data-k="A">A 对</div>
+    <div class="opt" data-k="B">B 错</div>
+  </div>
+
+  <div id="submitBtn" class="btn submit">提交</div>
+  <div id="nextBtn" class="btn next">下一节</div>
+
+<script>
+  window.__submitted = 0;
+  window.__nextClicked = 0;
+  window.__quiz = {
+    count: function () { return document.querySelectorAll('.stem').length; },
+    filled: function () {
+      var n = 0;
+      var stems = document.querySelectorAll('.stem');
+      for (var i = 0; i < stems.length; i++) {
+        var s = stems[i];
+        var el = s.nextElementSibling;
+        while (el && el.classList.contains('opt')) {
+          if (el.classList.contains('is-checked')) n++;
+          el = el.nextElementSibling;
+        }
+      }
+      return n;
+    },
+    values: function () {
+      return Array.prototype.map.call(document.querySelectorAll('.stem'), function (s) {
+        var picked = [];
+        var el = s.nextElementSibling;
+        while (el && el.classList.contains('opt')) {
+          if (el.classList.contains('is-checked')) picked.push(el.getAttribute('data-k'));
+          el = el.nextElementSibling;
+        }
+        return { picked: picked };
+      });
+    },
+    submitted: function () { return window.__submitted; }
+  };
+
+  document.querySelectorAll('.opt').forEach(function (el) {
+    el.addEventListener('click', function () {
+      el.classList.toggle('is-checked');
+    });
+  });
+  // 真实场景里，弹确认框的那一层没有“下一节”，按钮在外层；这里也照做
+  if (/[?&]parentConfirm=1/.test(location.search)) {
+    var nb = document.getElementById('nextBtn');
+    if (nb) nb.parentNode.removeChild(nb);
+  }
+  document.getElementById('submitBtn').addEventListener('click', function () {
+    // ?parentConfirm=1：确认框由父页面弹，自己等父页面的回执再算提交成功
+    if (/[?&]parentConfirm=1/.test(location.search)) {
+      try { window.parent.postMessage({ type: 'van-demo-submit' }, '*'); } catch (e) { /* ignore */ }
+      return;
+    }
+    window.__submitted++;
+    try { if (window.parent !== window) window.parent.postMessage('van-demo-submitted', '*'); } catch (e) { /* ignore */ }
+    setTimeout(function () { document.getElementById('submitBtn').style.display = 'none'; }, 300);
+  });
+  window.addEventListener('message', function (ev) {
+    var d = ev.data || {};
+    if (d.type === 'van-demo-confirmed') {
+      window.__submitted++;
+      document.getElementById('submitBtn').style.display = 'none';
+    }
+  });
+  document.getElementById('nextBtn') && document.getElementById('nextBtn').addEventListener('click', function () {
+    window.__nextClicked++;
+  });
+</script>
+</body>
+</html>

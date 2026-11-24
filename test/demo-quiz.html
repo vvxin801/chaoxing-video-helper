@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>章节测验 - 自动答题演示</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; background: #f2f4f8; font: 14px/1.6 "Microsoft YaHei", system-ui, sans-serif; color: #1f2937; }
+  .wrap { max-width: 860px; margin: 24px auto 120px; }
+  .head { background: #fff; border-radius: 12px; padding: 18px 22px; box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+  .head h1 { margin: 0 0 6px; font-size: 18px; }
+  .head p { margin: 0; color: #64748b; font-size: 13px; }
+  .questionLi { background: #fff; border-radius: 12px; padding: 18px 22px; margin-top: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+  .mark_name { margin: 0 0 8px; font-size: 13px; color: #94a3b8; font-weight: 400; }
+  .Zy_TItle { margin-bottom: 10px; }
+  .Zy_TItle .fl { color: #0f766e; font-size: 12px; margin-bottom: 4px; }
+  .Zy_TItle .clearfix { font-size: 15px; font-weight: 600; }
+  .Zy_ulTop { list-style: none; margin: 0; padding: 0; }
+  .Zy_ulTop li { padding: 6px 8px; border-radius: 8px; }
+  .Zy_ulTop li:hover { background: #f1f5f9; }
+  .Zy_ulTop label { cursor: pointer; margin-left: 6px; }
+  textarea, input[type=text] { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
+  textarea { min-height: 76px; resize: vertical; }
+  .Cy_ulTop { display: flex; gap: 8px; flex-direction: column; }
+  .submitBar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid #e2e8f0; padding: 12px 22px; display: flex; justify-content: flex-end; }
+  .btnSubmit { display: inline-block; background: #0f766e; color: #fff; padding: 9px 26px; border-radius: 8px; text-decoration: none; }
+  .tips { color: #94a3b8; font-size: 12px; margin-right: auto; align-self: center; }
+  /* 平台点“提交”后自己弹出的确认框（模拟 layui） */
+  .layui-layer { position: fixed; inset: 0; background: rgba(15,23,42,.35); display: none; align-items: center; justify-content: center; z-index: 9000; }
+  .layui-layer.show { display: flex; }
+  .layui-layer-box { background: #fff; border-radius: 12px; min-width: 300px; padding: 20px 22px 14px; box-shadow: 0 12px 40px rgba(15,23,42,.24); }
+  .layui-layer-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+  .layui-layer-content { color: #334155; margin-bottom: 18px; }
+  .layui-layer-btn { display: flex; justify-content: flex-end; gap: 10px; }
+  .layui-layer-btn a { display: inline-block; padding: 7px 18px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 13px; }
+  .layui-layer-btn0 { color: #475569; background: #f1f5f9; }
+  .layui-layer-btn1 { color: #fff; background: #0f766e; }
+  /* 学习通原始的“确认提交？”弹层：.maskDiv > .popDiv（没有 layui 类名） */
+  .maskDiv { position: fixed; inset: 0; background: rgba(15,23,42,.35); z-index: 9001; }
+  .popDiv { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 10px; padding: 18px 22px 14px; min-width: 320px; box-shadow: 0 12px 40px rgba(15,23,42,.24); }
+  .popHead p { margin: 0 0 12px; font-weight: 600; }
+  .popWord { color: #334155; margin: 0 0 18px; }
+  .popBottom { display: flex; justify-content: flex-end; gap: 10px; }
+  .jb_btn, .btnBlue { display: inline-block; padding: 7px 20px; border-radius: 6px; text-decoration: none; font-size: 14px; }
+  .jb_btn { background: #3b82f6; color: #fff; }
+  .btnBlue { background: #f1f5f9; color: #475569; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>章节测验 · 演示页</h1>
+    <p>这个页面模仿学习通章节测验的 DOM（.questionLi / .Zy_TItle / .Zy_ulTop），只用于测试自动答题。</p>
+  </div>
+
+  <div class="questionLi" data-type="single">
+    <h3 class="mark_name">1.（单选题, 2.0分）</h3>
+    <div class="Zy_TItle">
+      <div class="fl">（单选题, 2.0分）</div>
+      <div class="clearfix">1. 中华人民共和国成立于哪一年？</div>
+    </div>
+    <ul class="Zy_ulTop">
+      <li><input type="radio" name="q1" id="q1a" value="A"><label for="q1a">A、1945年</label></li>
+      <li><input type="radio" name="q1" id="q1b" value="B"><label for="q1b">B、1949年</label></li>
+      <li><input type="radio" name="q1" id="q1c" value="C"><label for="q1c">C、1978年</label></li>
+      <li><input type="radio" name="q1" id="q1d" value="D"><label for="q1d">D、1911年</label></li>
+    </ul>
+  </div>
+
+  <div class="questionLi" data-type="multi">
+    <h3 class="mark_name">2.（多选题, 3.0分）</h3>
+    <div class="Zy_TItle">
+      <div class="fl">（多选题, 3.0分）</div>
+      <div class="clearfix">2. 下列哪些属于需求侧管理的手段？</div>
+    </div>
+    <ul class="Zy_ulTop">
+      <li><input type="checkbox" name="q2" id="q2a" value="A"><label for="q2a">A、价格杠杆</label></li>
+      <li><input type="checkbox" name="q2" id="q2b" value="B"><label for="q2b">B、财政补贴</label></li>
+      <li><input type="checkbox" name="q2" id="q2c" value="C"><label for="q2c">C、指令性计划</label></li>
+      <li><input type="checkbox" name="q2" id="q2d" value="D"><label for="q2d">D、阶梯电价</label></li>
+    </ul>
+  </div>
+
+  <div class="questionLi" data-type="judge">
+    <h3 class="mark_name">3.（判断题, 2.0分）</h3>
+    <div class="Zy_TItle">
+      <div class="fl">（判断题, 2.0分）</div>
+      <div class="clearfix">3. 在标准大气压下，水的沸点是 100 摄氏度。</div>
+    </div>
+    <ul class="Zy_ulTop">
+      <li><input type="radio" name="q3" id="q3a" value="A"><label for="q3a">正确</label></li>
+      <li><input type="radio" name="q3" id="q3b" value="B"><label for="q3b">错误</label></li>
+    </ul>
+  </div>
+
+  <div class="questionLi" data-type="fill">
+    <h3 class="mark_name">4.（填空题, 4.0分）</h3>
+    <div class="Zy_TItle">
+      <div class="fl">（填空题, 4.0分）</div>
+      <div class="clearfix">4. 光合作用的场所是____，主要产物是____。</div>
+    </div>
+    <div class="Cy_ulTop">
+      <input type="text" class="tk" id="q4a" placeholder="第一空">
+      <input type="text" class="tk" id="q4b" placeholder="第二空">
+    </div>
+  </div>
+
+  <div class="questionLi" data-type="short">
+    <h3 class="mark_name">5.（简答题, 5.0分）</h3>
+    <div class="Zy_TItle">
+      <div class="fl">（简答题, 5.0分）</div>
+      <div class="clearfix">5. 简述需求价格弹性的含义。</div>
+    </div>
+    <textarea id="q5" class="tk" placeholder="请输入答案"></textarea>
+  </div>
+</div>
+
+<div class="submitBar">
+  <span class="tips" id="tips">提交按钮用于验证自动交卷，考试模式下应当不会被点。</span>
+  <a href="javascript:;" id="submitBtn" class="btnSubmit">提交</a>
+  <a href="javascript:;" id="nextBtn" class="btnNext">下一节</a>
+</div>
+
+<div class="layui-layer" id="confirmLayer">
+  <div class="layui-layer-box">
+    <div class="layui-layer-title">提示</div>
+    <div class="layui-layer-content">确认提交？</div>
+    <div class="layui-layer-btn">
+      <a href="javascript:;" class="layui-layer-btn0" id="confirmNo">取消</a>
+      <a href="javascript:;" class="layui-layer-btn1" id="confirmYes">提交</a>
+    </div>
+  </div>
+</div>
+
+<div class="maskDiv" id="workpop" style="display:none;">
+  <div class="popDiv wid440 Marking">
+    <div class="popHead"><p class="fl fs18 colorDeep">提示</p></div>
+    <p class="popWord fs16 colorIn" id="popcontent">确认提交？</p>
+    <div class="popBottom">
+      <a href="javascript:;" id="popok" class="jb_btn jb_btn_92 fr fs14" role="button" aria-label="确定">提交</a>
+      <a href="javascript:;" id="popno" class="btnBlue btn_92_cancel fr fs14" role="button" aria-label="取消">取消</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var params = new URLSearchParams(location.search);
+    var exam = params.get('mode') === 'exam';
+    if (exam) {
+      document.title = '考试 - 马克思主义基本原理';
+      document.querySelector('.head h1').textContent = '考试 · 演示页';
+      document.querySelector('.head p').textContent = '考试模式：插件只填答案，不允许自动交卷。';
+    }
+
+    window.__submitted = 0;
+    window.__nextClicked = 0;
+
+    var layer = document.getElementById('confirmLayer');
+    var workpop = document.getElementById('workpop');
+    var useCq = /[?&]cq=1\b/.test(location.search);
+
+    document.getElementById('submitBtn').addEventListener('click', function () {
+      // 模拟学习通：先弹“确认提交？”，点确认才算提交
+      // ?slow=1 时故意晚 1.8 秒才弹，验证插件会等确认框、不会以为“点了没反应”
+      // ?cq=1 时改用学习通自己的 .popDiv 弹层（没有 layui 类名）
+      var slow = /[?&]slow=1\b/.test(location.search);
+      var show = function () {
+        if (useCq) workpop.style.display = 'block';
+        else layer.classList.add('show');
+      };
+      if (slow) setTimeout(show, 1800);
+      else show();
+    });
+
+    document.getElementById('popno').addEventListener('click', function () {
+      workpop.style.display = 'none';
+    });
+    document.getElementById('popok').addEventListener('click', function () {
+      workpop.style.display = 'none';
+      window.__submitted += 1;
+      document.getElementById('submitBtn').textContent = '已提交';
+      document.getElementById('tips').textContent = '已提交（第 ' + window.__submitted + ' 次）';
+    });
+
+    document.getElementById('confirmNo').addEventListener('click', function () {
+      layer.classList.remove('show');
+    });
+
+    document.getElementById('confirmYes').addEventListener('click', function () {
+      layer.classList.remove('show');
+      window.__submitted += 1;
+      document.getElementById('submitBtn').textContent = '已提交';
+      document.getElementById('tips').textContent = '已提交（第 ' + window.__submitted + ' 次）';
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', function () {
+      window.__nextClicked += 1;
+      document.getElementById('tips').textContent = '已点下一节';
+    });
+
+    /** 给 e2e 用的状态快照。 */
+    window.__quiz = {
+      exam: exam,
+      count: function () { return document.querySelectorAll('.questionLi').length; },
+      filled: function () {
+        var n = 0;
+        document.querySelectorAll('.questionLi').forEach(function (el) {
+          var has = false;
+          el.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(function (i) { if (i.checked) has = true; });
+          el.querySelectorAll('input[type=text],textarea').forEach(function (t) { if (t.value.trim()) has = true; });
+          if (has) n += 1;
+        });
+        return n;
+      },
+      values: function () {
+        return Array.prototype.map.call(document.querySelectorAll('.questionLi'), function (el) {
+          var picked = [];
+          el.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(function (i) {
+            if (i.checked) picked.push(i.value);
+          });
+          var texts = [];
+          el.querySelectorAll('input[type=text],textarea').forEach(function (t) { texts.push(t.value); });
+          return { picked: picked, texts: texts };
+        });
+      },
+      submitted: function () { return window.__submitted; }
+    };
+  })();
+</script>
+</body>
+</html>
